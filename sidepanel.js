@@ -1,6 +1,6 @@
 import { createClient } from './lib/api.js';
 import { runAnalysis } from './lib/pipeline.js';
-import { ALL, cadence, geoMatrix, networkSummary, specs, topCreatives } from './lib/aggregate.js';
+import { ALL, CNT, IMP, cadence, geoMatrix, networkSummary, specs, topCreatives } from './lib/aggregate.js';
 import { cacheKey, loadDataset, saveDataset } from './lib/cache.js';
 import { addDays, localToday } from './lib/dates.js';
 import { buildSheets } from './lib/export.js';
@@ -9,7 +9,7 @@ import { esc } from './ui/format.js';
 
 const $ = (sel) => document.querySelector(sel);
 const PAGE = 50;
-const state = { ds: null, net: ALL, tab: 'top', limit: PAGE };
+const state = { ds: null, net: ALL, tab: 'top', limit: PAGE, metric: IMP };
 
 const client = createClient({
   fetchFn: (url, init) => fetch(url, init),
@@ -106,11 +106,13 @@ function render() {
     .map((n) => `<button type="button" data-net="${esc(n)}" class="${n === net ? 'on' : ''}">${n === ALL ? 'Tất cả' : esc(n)}</button>`).join('');
   $('#chips').hidden = tab === 'geo';
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === tab);
+  for (const b of document.querySelectorAll('#metrics button')) b.classList.toggle('on', b.dataset.metric === state.metric);
+  const m = state.metric;
   const view = {
-    top: () => renderTop(topCreatives(ds, net), state.limit),
-    cadence: () => renderCadence(cadence(ds, net), networkSummary(ds), net),
-    geo: () => renderGeo(geoMatrix(ds)),
-    specs: () => renderSpecs(specs(ds, net)),
+    top: () => renderTop(topCreatives(ds, net, m), state.limit, m),
+    cadence: () => renderCadence(cadence(ds, net), networkSummary(ds, m), net, m),
+    geo: () => renderGeo(geoMatrix(ds, m), m),
+    specs: () => renderSpecs(specs(ds, net, m), m),
   }[tab];
   $('#view').innerHTML = view();
 }
@@ -131,7 +133,8 @@ $('#export').addEventListener('click', exportXlsx);
 document.addEventListener('click', (e) => {
   const t = e.target.closest('button');
   if (!t) return;
-  if (t.dataset.tab) { state.tab = t.dataset.tab; render(); }
+  if (t.dataset.metric) { state.metric = t.dataset.metric; chrome.storage.local.set({ metric: state.metric }); render(); }
+  else if (t.dataset.tab) { state.tab = t.dataset.tab; render(); }
   else if (t.dataset.net) { state.net = t.dataset.net; state.limit = PAGE; render(); }
   else if ('more' in t.dataset) { state.limit += PAGE; render(); }
   else if ('reload' in t.dataset) reloadInsightTab();
@@ -149,6 +152,10 @@ document.addEventListener('click', (e) => {
 
 // ---------- init ----------
 showAuth();
-chrome.storage.local.get('lastPkg').then(({ lastPkg }) => { if (lastPkg) $('#pkg').value = lastPkg; });
+chrome.storage.local.get(['lastPkg', 'metric']).then(({ lastPkg, metric }) => {
+  if (lastPkg) $('#pkg').value = lastPkg;
+  if (metric === CNT || metric === IMP) state.metric = metric;
+  for (const b of document.querySelectorAll('#metrics button')) b.classList.toggle('on', b.dataset.metric === state.metric);
+});
 $('#end').value = localToday();
 $('#start').value = addDays(localToday(), -29);

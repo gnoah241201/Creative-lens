@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ALL, topCreatives, networkSummary, cadence, geoMatrix, specs } from '../lib/aggregate.js';
+import { ALL, CNT, IMP, topCreatives, networkSummary, cadence, geoMatrix, specs } from '../lib/aggregate.js';
 
 const T = 'TikTok Ads', G = 'Google Ads';
 const sum = (o, k) => Object.values(o).reduce((s, v) => s + v[k], 0);
@@ -41,8 +41,8 @@ test('networkSummary: active, new, share, 7-day survival without right-censoring
   assert.equal(t.net, T);
   assert.equal(t.active, 2);
   assert.equal(t.fresh, 2);
-  assert.equal(t.cnt, 85);
-  assert.ok(Math.abs(t.cntShare - 85 / 165) < 1e-9);
+  assert.equal(t.value, 85);
+  assert.ok(Math.abs(t.share - 85 / 165) < 1e-9);
   assert.deepEqual(t.survival, { eligible: 1, survived: 1, rate: 1 });
   assert.equal(gg.active, 3);
   assert.equal(gg.fresh, 2);
@@ -79,8 +79,59 @@ test('specs buckets ratio, duration and duplication', () => {
   const s = specs(ds, ALL);
   const r916 = s.ratio.find((r) => r.label === '9:16');
   assert.equal(r916.count, 2);
-  assert.ok(Math.abs(r916.cntShare - 105 / 165) < 1e-9);
+  assert.ok(Math.abs(r916.share - 105 / 165) < 1e-9);
   assert.deepEqual(s.duration.map((r) => r.label), ['0–15s', '16–30s', '31–45s', '46–60s']);
   assert.deepEqual(s.dup.map((r) => [r.label, r.count]), [['1', 2], ['2–4', 1], ['10–49', 1]]);
-  assert.deepEqual(specs(ds, T).ratio.map((r) => [r.label, r.count, r.cntShare]), [['9:16', 2, 1]]);
+  assert.deepEqual(specs(ds, T).ratio.map((r) => [r.label, r.count, r.share]), [['9:16', 2, 1]]);
+});
+
+test('networkSummary and specs can be indexed on imp', () => {
+  const [, tCnt] = networkSummary(ds, CNT);
+  const [, tImp] = networkSummary(ds, IMP);
+  assert.equal(tCnt.value, 85);          // 80 + 5
+  assert.equal(tImp.value, 950);         // 900 + 50
+  assert.ok(Math.abs(tImp.share - 950 / 1560) < 1e-9);
+  // creative counts never depend on the index
+  assert.equal(tCnt.active, tImp.active);
+  assert.equal(tCnt.fresh, tImp.fresh);
+  assert.deepEqual(tCnt.survival, tImp.survival);
+  // 9:16 is A + C; at ALL level that is each creative's total imp (1000 + 50) over 1560
+  assert.ok(Math.abs(specs(ds, ALL, IMP).ratio.find((r) => r.label === '9:16').share - 1050 / 1560) < 1e-9);
+});
+
+test('topCreatives keeps ranking on cnt but picks top geos by the index', () => {
+  // B outranks C on cnt (50 vs 5) under either index.
+  assert.deepEqual(topCreatives(ds, ALL, IMP).map((r) => r.c.id), ['A', 'B', 'D', 'C']);
+  assert.deepEqual(topCreatives(ds, ALL, CNT)[0].geos, ['JP', 'KR', 'BR']);
+});
+
+test('geoMatrix exposes absolute values and the largest cell for shading', () => {
+  const m = geoMatrix(ds, CNT);
+  assert.equal(m.value.JP[T], 55);
+  assert.equal(m.value.KR[G], 0);
+  assert.equal(m.max, 55);
+  // A tiny network owning one geo scores a high share but a low absolute value: that is exactly
+  // the case the shading must not exaggerate.
+  const small = {
+    start: '2026-09-01', end: '2026-09-30', networks: [T, G],
+    creatives: [
+      mk('A', '2026-09-02', '2026-09-20', { [T]: { cnt: 1000, imp: 0 } }, { [T]: { JP: g(1000) } }, {}),
+      mk('B', '2026-09-02', '2026-09-20', { [G]: { cnt: 10, imp: 0 } }, { [G]: { US: g(10) } }, {}),
+    ],
+  };
+  const sm = geoMatrix(small, CNT);
+  assert.equal(sm.share.US[G], 1);        // 100% of that network's column
+  assert.equal(sm.value.US[G], 10);       // but only 1% of the largest cell
+  assert.equal(sm.max, 1000);
+  assert.ok(Math.sqrt(sm.value.US[G] / sm.max) < 0.15);
+});
+
+test('geoMatrix ranks geos by the selected index', () => {
+  const byImp = {
+    start: '2026-09-01', end: '2026-09-30', networks: [T],
+    creatives: [mk('A', '2026-09-02', '2026-09-20', { [T]: { cnt: 110, imp: 340 } },
+      { [T]: { JP: { cnt: 100, imp: 40 }, FR: { cnt: 10, imp: 300 } } }, {})],
+  };
+  assert.deepEqual(geoMatrix(byImp, CNT).geos, ['JP', 'FR']);
+  assert.deepEqual(geoMatrix(byImp, IMP).geos, ['FR', 'JP']); // panel bias reversed by the estimate
 });

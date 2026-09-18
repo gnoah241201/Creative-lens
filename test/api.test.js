@@ -52,6 +52,16 @@ test('retries 5xx then succeeds', async () => {
   assert.equal(n, 3);
 });
 
+test('searchAll calls the v2 search path', async () => {
+  let seen;
+  const c = createClient({
+    getHeaders: auth, sleep: noSleep,
+    fetchFn: async (url, init) => { seen ??= url; return ok({ code: 200, data: { list: [] } }); },
+  });
+  await c.searchAll('com.a', '2026-09-01', '2026-09-30');
+  assert.equal(seen, 'https://data.insightrackr.com/cas/api/v2/imagevideo/search');
+});
+
 test('searchAll keeps paging past a short page and stops only on an empty page', async () => {
   const pages = { 1: rows('a', 40), 2: rows('b', 39), 3: rows('c', 40), 4: [] };
   const c = createClient({
@@ -85,7 +95,7 @@ test('distributeAll batches ids and forwards the network filter', async () => {
   const bodies = [];
   const c = createClient({
     batchSize: 2, getHeaders: auth, sleep: noSleep,
-    fetchFn: async (url, init) => { const b = JSON.parse(init.body); bodies.push({ url, b }); return ok({ code: 0, data: b.ids.map((id) => ({ id, list: [] })) }); },
+    fetchFn: async (url, init) => { const b = JSON.parse(init.body); bodies.push({ url, b }); return ok({ code: 0, data: Object.fromEntries(b.ids.map((id) => [id, []])) }); },
   });
   const out = await c.distributeAll('country', ['a', 'b', 'c'], { pkg: 'com.a', start: '2026-09-01', end: '2026-09-30', adfactionIds: [109] });
   assert.equal(bodies.length, 2);
