@@ -97,15 +97,40 @@ Repo lẫn nguyên một template React/Vite không có trong plan. Đã xoá (-
 
 Danh sách file còn lại giờ khớp chính xác mục **File Structure** của plan.
 
+### ✅ Chạy thật toàn bộ `lib/` trên API thật (e2e tầng dữ liệu)
+
+Sau khi sửa, toàn bộ `lib/` được bundle thành 1 ES module, nạp vào trang insightrackr đã đăng nhập và
+gọi `runAnalysis()` thật với `fetch` thật — tức là đúng code trong repo, đúng API, đúng quy mô thật.
+Không phải mock, không phải fixture.
+
+`com.ig.screwdom`, `2026-08-20 → 2026-09-18`, **xong sau 94 giây**, không lỗi:
+
+| Hạng mục | Kết quả | Đối chiếu |
+|---|---|---|
+| Số creative | **2577** | `count.totalSize` = 2577 → **lệch 0%** (yêu cầu ±2%) |
+| Creative mới | **1497** | `count.newNum` = 1497 → khớp tuyệt đối |
+| Network phát hiện | 11 | Google Ads 39,1% · Applovin 34,9% · TikTok 21,6% … |
+| Có dữ liệu network | 2214 / 2577 | |
+| Có dữ liệu geo | 1943 / 2577 | Top geo: JP, DE, BR, KR, US, MX |
+| Có thumbnail | 2573 / 2577 | |
+| Cadence | 30 bucket ngày, tổng 1497 | khớp `newNum` |
+| `buildSheets` | Creatives 2578×24 · Networks 13×7 · NewCreatives 31×13 · Geo 44×12 · Specs 20×4 | đúng 5 sheet, đúng số dòng |
+
+Paging (65 trang), batch 100 id, và vòng lặp geo theo từng network đều chạy đúng ở quy mô thật.
+Cũng xác nhận luôn cảnh báo trong README: dữ liệu **lệch mạnh về Nhật** (JP là geo số 1).
+
+4/2577 creative (0,16%) không có thumbnail — đó là banner ảnh 1200×628 không có cả `videoUrl` lẫn
+`converUrl`, nên `thumbUrl: null` là kết quả đúng. UI hiện đang render `<img src="">` cho các row này
+(icon ảnh vỡ). Cosmetic, chưa sửa.
+
 ### ⏭️ Việc còn lại
 
-**Task 8 Step 7 (kiểm thử end-to-end) vẫn chưa chạy** — cần load extension vào Chrome.
-Mọi thứ trên đây mới chứng minh *shape dữ liệu* đúng; chưa chứng minh toàn bộ luồng chạy thông trong extension.
-
-Mốc đối chiếu khi test: `/v3/imagevideo/count` cho `com.ig.screwdom` (2026-08-20 → 2026-09-18) trả
-**`totalSize: 2577`**, `newNum: 1497`. Số creative extension lấy về phải nằm trong ±2% của 2577.
+**Task 8 Step 7 chưa chạy** — phần trên đã chứng minh tầng dữ liệu (`lib/`) chạy thông trên API thật,
+nhưng **chưa kiểm thử tầng extension**: `background.js` bắt header, `chrome.storage.session`,
+side panel UI, cache IndexedDB, phát video inline, nút tải mp4, xuất file .xlsx bằng SheetJS.
+Việc này cần Load unpacked vào Chrome (`chrome://extensions` → Developer mode → Load unpacked).
 
 Chưa kiểm chứng (cần dataset lớn hơn mới chạm tới):
-- `CAP_SPLIT = 6900` / ngưỡng truncate 7.000 row của server.
-- `MAX_PAGES = 200`.
+- `CAP_SPLIT = 6900` / ngưỡng truncate 7.000 row của server — game này mới 2577 creative/30 ngày.
+- `MAX_PAGES = 200` — mới dùng tới 65.
 - Nhánh `EXPIRED_CODES = [-3106]` khi phiên hết hạn.
