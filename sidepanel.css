@@ -26,6 +26,10 @@ button { cursor: pointer; }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 14px; }
 .chips button { padding: 3px 10px; border-radius: 999px; font-size: 12px; }
 .chips button.on { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.metrics { display: flex; align-items: center; gap: 4px; padding: 0 14px 8px; font-size: 12px; }
+.metrics span { margin-right: 4px; }
+.metrics button { padding: 3px 10px; border-radius: 999px; font-size: 12px; }
+.metrics button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .tabs { display: flex; gap: 16px; padding: 0 14px; border-bottom: 1px solid var(--line); }
 .tabs button { padding: 8px 0; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); }
 .tabs button.on { color: var(--fg); border-bottom-color: var(--fg); }

@@ -40,13 +40,38 @@ test('renderTop escapes copy, limits rows, shows the more button', () => {
 
 test('renderCadence, renderGeo, renderSpecs render key content', () => {
   const cad = { unit: 'day', buckets: [{ key: '2026-09-01', count: 3 }] };
-  const summary = [{ net: '*', active: 4, fresh: 3, cnt: 10, cntShare: 1, survival: { eligible: 2, survived: 1, rate: 0.5 } }];
+  const summary = [{ net: '*', active: 4, fresh: 3, value: 10, share: 1, survival: { eligible: 2, survived: 1, rate: 0.5 } }];
   assert.match(renderCadence(cad, summary, '*'), /3<\/b> creative mới/);
   assert.match(renderCadence(cad, summary, '*'), /Tất cả/);
-  const geo = renderGeo({ geos: ['JP'], networks: ['TikTok Ads'], share: { JP: { 'TikTok Ads': 0.5 } }, totals: { 'TikTok Ads': 10 } });
+  const geo = renderGeo({ geos: ['JP'], networks: ['TikTok Ads'], share: { JP: { 'TikTok Ads': 0.5 } }, value: { JP: { 'TikTok Ads': 5 } }, max: 5, totals: { 'TikTok Ads': 10 } });
   assert.match(geo, /50%/);
-  assert.match(renderGeo({ geos: [], networks: [], share: {}, totals: {} }), /Chưa có dữ liệu geo/);
-  const sp = renderSpecs({ ratio: [{ label: '9:16', count: 2, cntShare: 0.6 }], duration: [], dup: [] });
+  assert.match(renderGeo({ geos: [], networks: [], share: {}, value: {}, max: 0, totals: {} }), /Chưa có dữ liệu geo/);
+  const sp = renderSpecs({ ratio: [{ label: '9:16', count: 2, share: 0.6 }], duration: [], dup: [] });
   assert.match(sp, /9:16/);
   assert.match(sp, /width:60\.0%/);
+});
+
+test('renderTop shows the selected index first and keeps the other alongside', () => {
+  const c = { id: 'a1', thumbUrl: 't.jpg', duration: 29, ratio: '9:16', creativeCnt: 3, firstSeen: '2026-09-02', copy: 'x', videoUrl: 'v.mp4' };
+  const rows = [{ c, cnt: 120, imp: 41560, geos: ['JP'] }];
+  const byCnt = renderTop(rows, 10, 'cnt');
+  assert.match(byCnt, /<b>120<\/b> <span class="muted">cnt<\/span>/);
+  assert.match(byCnt, /imp 41\.6k/);
+  const byImp = renderTop(rows, 10, 'imp');
+  assert.match(byImp, /<b>41\.6k<\/b> <span class="muted">imp<\/span>/);
+  assert.match(byImp, /cnt 120/);
+});
+
+test('renderGeo shades by absolute value, not by column share', () => {
+  // Two cells, both 100% of their own column, but one is a hundredth the size.
+  const m = {
+    geos: ['JP', 'US'], networks: ['Big', 'Tiny'],
+    share: { JP: { Big: 1, Tiny: 0 }, US: { Big: 0, Tiny: 1 } },
+    value: { JP: { Big: 1000, Tiny: 0 }, US: { Big: 0, Tiny: 10 } },
+    max: 1000, totals: { Big: 1000, Tiny: 10 },
+  };
+  const html = renderGeo(m, 'imp');
+  assert.match(html, /--v:1\.000/);   // the big cell is fully saturated
+  assert.match(html, /--v:0\.100/);   // sqrt(10/1000) -- the tiny one nearly disappears
+  assert.match(html, /100%/);          // yet both still print their column share
 });

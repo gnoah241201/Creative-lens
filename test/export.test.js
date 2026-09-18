@@ -14,9 +14,15 @@ test('buildSheets produces 5 sheets with per-network columns', () => {
   };
   const s = buildSheets(ds);
   assert.deepEqual(Object.keys(s), ['Creatives', 'Networks', 'NewCreatives', 'Geo', 'Specs']);
+  // every sheet carries both indices, whichever one the panel happens to be showing
   assert.ok(s.Creatives[0].includes('cnt TikTok Ads'));
+  assert.ok(s.Creatives[0].includes('imp TikTok Ads'));
   assert.equal(s.Creatives.length, 2);
   assert.equal(s.Networks.length, 3); // header + ALL + TikTok
+  assert.deepEqual(s.Networks[0].slice(3, 7), ['cnt', 'cnt_share', 'imp_estimate', 'imp_share']);
+  assert.deepEqual(s.Networks[2].slice(3, 7), [10, 1, 100, 1]);
   assert.equal(s.NewCreatives.length, 4); // header + 3 days
-  assert.deepEqual(s.Geo[1], ['JP', 1]);
+  assert.deepEqual(s.Geo[0], ['geo', 'cnt TikTok Ads', 'imp TikTok Ads']);
+  assert.deepEqual(s.Geo[1], ['JP', 10, 100]); // absolute values, not shares
+  assert.deepEqual(s.Specs[0], ['group', 'label', 'count', 'cnt_share', 'imp_share']);
 });

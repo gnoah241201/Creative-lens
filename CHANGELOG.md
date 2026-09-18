@@ -1,5 +1,79 @@
 # Changelog
 
+## 2026-09-18 — Nút chuyển chỉ số cnt ⇄ imp + sửa cách tô màu heatmap geo
+
+Thiết kế đầy đủ: `docs/superpowers/specs/2026-09-18-metric-toggle-design.md`
+
+### Vấn đề
+
+Một ảnh chụp tab Geo lộ ra **hai lỗi tách biệt**.
+
+**1. Dùng sai chỉ số.** Mọi phân bố trong panel đang tính trên `cnt` (Times Detected). `cnt` là
+**số đếm mẫu** — nó tăng theo tiền đối thủ chi, nhưng cũng tăng theo số máy insightrackr đặt ở
+nước đó. Panel của họ dày ở Nhật, nên JP luôn đứng đầu mọi bảng geo bất kể tiền thật chảy đi đâu.
+
+Đo trên một creative thật:
+
+| Geo | cnt | imp | imp/cnt |
+|---|---|---|---|
+| FR | 37 | 321.155 | 8.680 |
+| IT | 77 | 184.338 | 2.394 |
+| DE | 100 | 136.071 | 1.361 |
+| JP | 13 | 16.784 | 1.291 |
+
+Xếp hạng **đảo ngược hoàn toàn** giữa hai chỉ số. Hệ số imp/cnt chênh 6,7 lần và thấp nhất đúng ở
+nơi panel dày nhất (JP) — tức `imp` chính là hiệu chỉnh cho độ lệch đó.
+
+**2. Tô màu thổi phồng network nhỏ.** Ô được tô theo % **trong cột**, mà mỗi cột tự chuẩn hoá về
+100%. Moloco (tổng 631 cnt) đạt 91% ở US và thành ô **đậm nhất bảng**, trong khi Google Ads ở US
+(~6.271 cnt, gấp 11 lần) gần như trắng. Đổi chỉ số **không** tự sửa lỗi này — nó là lỗi chuẩn hoá.
+
+### Thay đổi
+
+**Chỉ số** — `lib/aggregate.js` thêm `CNT`, `IMP`, `valueIn()`. `geoMatrix` / `networkSummary` /
+`specs` / `topGeos` nhận thêm tham số `metric` (mặc định `CNT` nên caller cũ không ảnh hưởng).
+
+Ba nguyên tắc:
+- **Xếp hạng luôn theo `cnt`** — trong cùng một network, điều kiện lấy mẫu như nhau nên số đếm
+  thật là so sánh công bằng hơn, và danh sách không nhảy chỗ khi gạt nút. Chỉ số đang chọn chỉ
+  quyết định số nào in đậm; số kia vẫn nằm ngay dòng dưới.
+- **Điều kiện "có chạy ở network này" vẫn theo `cnt > 0`** — đây là câu hỏi có/không, `cnt` là
+  bằng chứng trực tiếp.
+- **`active` / `fresh` / `survival` đếm creative** nên giống nhau ở cả hai chỉ số.
+
+Đổi tên (vì field giờ có thể chứa imp): `networkSummary` `cnt`→`value`, `cntShare`→`share`;
+`specs` `cntShare`→`share`.
+
+**Tô màu** — tách đôi vai trò của ô: **chữ** vẫn là % trong cột, **màu nền** theo
+`sqrt(value / max)` với `max` là ô lớn nhất đang hiển thị. `geoMatrix` trả thêm `value` và `max`.
+Dùng căn bậc hai vì imp trải nhiều bậc độ lớn, tô tuyến tính thì chỉ ô lớn nhất có màu.
+Kết quả: Moloco/US tụt xuống ~5% độ đậm, Google/US lên ~20%.
+
+**UI** — nút 2 lựa chọn phía trên thanh tab, **luôn hiển thị** kể cả ở tab Geo (nơi chip network bị
+ẩn và cũng là nơi chỉ số quan trọng nhất). Mặc định **imp**, lưu vào `chrome.storage.local`.
+Chú thích dưới mỗi bảng đổi theo chỉ số — riêng tab Geo giờ chỉ đường "muốn so geo với geo hãy
+chuyển sang imp" thay vì chỉ cảnh báo đừng so.
+
+**Excel** — file xuất ra **không phụ thuộc nút toggle**, vì người nhận file không thấy bạn đang
+chọn gì. Mọi sheet mang cả hai: `Creatives` có `cnt {net}` + `imp {net}`; `Networks` có `cnt`,
+`cnt_share`, `imp_estimate`, `imp_share`; `Geo` đổi sang **giá trị tuyệt đối** cả hai chỉ số
+(muốn ra % thì tự tính trong Excel); `Specs` có `cnt_share` + `imp_share`.
+
+### Kiểm chứng
+
+`npm test` → **42/42 pass** (thêm 6 test). Trong đó có fixture 1000-vs-10 khẳng định ô 100% share
+của network tí hon phải tô nhạt dưới 0,15.
+
+Chạy thật trên fixture `country.json`: thứ tự geo `DE > IT > FR` (cnt) đổi thành `FR > IT > DE`
+(imp), độ đậm của FR lên 61% → 100%, JP xuống 36% → 23%.
+
+### Không làm
+
+- Không gọi lại API khi gạt nút — cả hai số đã lưu sẵn theo từng creative/network/geo.
+- Không cho mỗi tab một chỉ số riêng — dễ vô tình so hai tab bằng hai thước đo khác nhau.
+
+---
+
 ## 2026-09-18 — Sửa theo kết quả probe API thật (Task 2) + dọn scaffold
 
 Bản code trước đó được sinh ra bám đúng từng chữ theo
