@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { ratioLabel, toIsoDate, toCreative, parseDistribute } from '../lib/normalize.js';
-import { extractList } from '../lib/api.js';
+import { extractList, distributeEntries } from '../lib/api.js';
 
 test('ratioLabel', () => {
   assert.equal(ratioLabel(720, 1280), '9:16');
@@ -59,7 +59,7 @@ test('real fixtures normalize without losing ids', () => {
     assert.match(c.firstSeen ?? '', /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(c.videoUrl?.startsWith('http'));
   }
-  const adf = parseDistribute(extractList(load('adfaction.json').data));
+  const adf = parseDistribute(distributeEntries(load('adfaction.json').data));
   assert.ok(adf.size > 0);
   for (const items of adf.values()) for (const it of items) assert.equal(typeof it.cnt, 'number');
 });
