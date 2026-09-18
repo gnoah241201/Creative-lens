@@ -1,6 +1,0 @@
-{
-  "name": "Creative Lens",
-  "description": "Chrome side-panel extension and analysis tool for competitor ad creatives from Insightrackr",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
