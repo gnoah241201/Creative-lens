@@ -1,0 +1,28 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "list": [
+      {
+        "id": "1001",
+        "list": [
+          { "name": "TikTok Ads", "adfactionId": 109, "cnt": 80, "impression": 3500 },
+          { "name": "Google Ads", "adfactionId": 105, "cnt": 40, "impression": 1500 }
+        ]
+      },
+      {
+        "id": "1002",
+        "list": [
+          { "name": "Applovin", "adfactionId": 102, "cnt": 50, "impression": 2000 },
+          { "name": "Unity", "adfactionId": 110, "cnt": 35, "impression": 1200 }
+        ]
+      },
+      {
+        "id": "1003",
+        "list": [
+          { "name": "TikTok Ads", "adfactionId": 109, "cnt": 40, "impression": 1500 }
+        ]
+      }
+    ]
+  }
+}

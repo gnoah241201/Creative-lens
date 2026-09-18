@@ -1,0 +1,29 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "list": [
+      {
+        "id": "1001",
+        "list": [
+          { "geo": "JP", "cnt": 50, "impression": 2500 },
+          { "geo": "KR", "cnt": 30, "impression": 1000 },
+          { "geo": "US", "cnt": 40, "impression": 1500 }
+        ]
+      },
+      {
+        "id": "1002",
+        "list": [
+          { "geo": "US", "cnt": 45, "impression": 1800 },
+          { "geo": "BR", "cnt": 40, "impression": 1400 }
+        ]
+      },
+      {
+        "id": "1003",
+        "list": [
+          { "geo": "JP", "cnt": 40, "impression": 1500 }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Creative Lens",
+  "version": "0.1.0",
+  "description": "Insight creative đối thủ từ Insightrackr",
+  "action": { "default_title": "Creative Lens" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "permissions": ["sidePanel", "webRequest", "storage", "downloads"],
+  "host_permissions": ["https://data.insightrackr.com/*"]
+}

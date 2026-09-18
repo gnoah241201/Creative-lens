@@ -1,0 +1,51 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "list": [
+      {
+        "id": "1001",
+        "width": 720,
+        "height": 1280,
+        "videoTimeSpan": 29,
+        "creativeCnt": 5,
+        "showCnt": 120,
+        "impression": 5000,
+        "globalFirstTime": "2026-09-03 10:00:00",
+        "globalLastTime": "2026-09-15 00:00:00",
+        "title": "Can you solve all screw puzzles?",
+        "coverUrl": "https://sample.oss-accelerate.aliyuncs.com/videos_keyframe_v3/a/1001.jpg",
+        "videoUrl": "https://sample.oss-accelerate.aliyuncs.com/videos_v3/a/1001.mp4?Expires=1758000000&Signature=xyz"
+      },
+      {
+        "id": "1002",
+        "width": 1280,
+        "height": 720,
+        "videoTimeSpan": 45,
+        "creativeCnt": 2,
+        "showCnt": 85,
+        "impression": 3200,
+        "globalFirstTime": "2026-09-05 08:30:00",
+        "globalLastTime": "2026-09-17 12:00:00",
+        "title": "Unscrew the wooden pins now!",
+        "coverUrl": "https://sample.oss-accelerate.aliyuncs.com/videos_keyframe_v3/b/1002.jpg",
+        "videoUrl": "https://sample.oss-accelerate.aliyuncs.com/videos_v3/b/1002.mp4?Expires=1758000000&Signature=xyz"
+      },
+      {
+        "id": "1003",
+        "width": 720,
+        "height": 720,
+        "videoTimeSpan": 15,
+        "creativeCnt": 1,
+        "showCnt": 40,
+        "impression": 1500,
+        "globalFirstTime": "2026-09-10 14:15:00",
+        "globalLastTime": "2026-09-16 09:45:00",
+        "title": "Super satisfying ASMR puzzle",
+        "coverUrl": "https://sample.oss-accelerate.aliyuncs.com/videos_keyframe_v3/c/1003.jpg",
+        "videoUrl": "https://sample.oss-accelerate.aliyuncs.com/videos_v3/c/1003.mp4"
+      }
+    ],
+    "total": 3
+  }
+}
